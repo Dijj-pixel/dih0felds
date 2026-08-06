@@ -11,7 +11,7 @@
 ```
 ---
 
-🍽️ Felds
+# 🍽️ Felds
 
 «Processador inteligente de pedidos de almoço.»
 
@@ -21,7 +21,7 @@ Em vez de copiar informações manualmente, corrigir nomes de pratos ou contar p
 
 ---
 
-📖 Origem do nome
+## 📖 Origem do nome
 
 O nome Felds vem de feldspato, um dos minerais mais encontrados no ambiente em que o projeto foi desenvolvido.
 
@@ -33,7 +33,7 @@ Assim nasceu o nome do projeto.
 
 ---
 
-🎯 Objetivo
+## 🎯 Objetivo
 
 O objetivo do Felds é transformar informações desorganizadas em dados consistentes.
 
@@ -47,7 +47,7 @@ O sistema foi pensado para:
 
 ---
 
-✨ Funcionalidades
+## ✨ Funcionalidades
 
 Atualmente o sistema possui:
 
@@ -71,6 +71,7 @@ Atualmente o sistema possui:
 
 O fluxo do sistema pode ser resumido em:
 
+```
 Texto bruto
      │
      ▼
@@ -93,10 +94,10 @@ Tabela organizada
      │
      ├──► Excel
      └──► Resumo
-
+```
 ---
 
-🧩 Filosofia
+ ## 🧩 Filosofia
 
 O Felds não tenta adivinhar tudo.
 
@@ -106,7 +107,7 @@ A prioridade do projeto é auxiliar, e não substituir a revisão humana.
 
 ---
 
-🛠️ Tecnologias
+## 🛠️ Tecnologias
 
 O projeto foi desenvolvido utilizando apenas tecnologias Web.
 
@@ -119,15 +120,15 @@ Isso permite executar o sistema diretamente no navegador, sem necessidade de ins
 
 ---
 
-🚀 Estado do projeto
+## 🚀 Estado do projeto
 
-«🧪 Protótipo funcional»
+### «🧪 Protótipo funcional»
 
 O sistema já atende ao fluxo principal de utilização e continua recebendo melhorias de usabilidade, organização interna e novos recursos.
 
 ---
 
-💡 Possíveis evoluções
+## 💡 Possíveis evoluções
 
 Algumas ideias futuras incluem:
 
@@ -140,7 +141,7 @@ Algumas ideias futuras incluem:
 
 ---
 
-📜 Licença
+## 📜 Licença
 
 Ainda não definida.
 
@@ -152,7 +153,7 @@ Projeto desenvolvido para resolver um problema real do dia a dia.
 
 Às vezes as melhores ferramentas começam exatamente assim.
 
-:)                             
+Diego 2026:)                             
                                          
 ---
 # Sistema Felds de Pedidos por : Diego

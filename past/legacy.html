@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Felds — Processador de Pedidos (c/ Padronização e Ordenação)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js">
+    </script>
+    <style>
+        :root {
+            --bg-main: #FFF8DC;
+            --accent: #FFA500;
+            --accent-hover: #e69500;
+            --accent-light: #FFF3E0;
+            --text-dark: #1d150b;
+            --text-light: #FFF8DC;
+            --white: #FFFFFF;
+            --border: #e0d5c0;
+            --warning-bg: #FFF3E0;
+            --warning-border: #FFA500;
+            --success: #2e7d32;
+            --excel-green: #32CD32;
+            --excel-green-hover: #2db82d;
+            --auto-correct-bg: #FFFDE7;
+            --auto-correct-border: #FBC02D;
+            --variation-bg: #FFF8E1;
+            --variation-border: #FFB300;
+            --radius: 10px;
+            --radius-sm: 6px;
+            --shadow: 0 2px 12px rgba(29, 21, 11, 0.07);
+            --shadow-lg: 0 6px 24px rgba(29, 21, 11, 0.10);
+            --transition: 0.2s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg-main);
+            color: var(--text-dark);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        header {
+            background: var(--text-dark);
+            color: var(--text-light);
+            padding: 16px 28px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            z-index: 10;
+            flex-shrink: 0;
+            user-select: none;
+        }
+        header .logo {
+            font-size: 1.7rem;
+            font-weight: 700;
+            letter-spacing: -0.4px;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        header .logo .icon {
+            font-size: 1.8rem;
+        }
+        header .subtitle {
+            font-size: 0.9rem;
+            opacity: 0.75;
+            font-weight: 400;
+            letter-spacing: 0.2px;
+        }
+
+        main {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+            gap: 0;
+        }
+
+        .table-panel {
+            flex: 2.2;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 24px;
+            min-width: 0;
+            overflow: hidden;
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+        .status-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .sort-buttons {
+            display: flex;
+            gap: 6px;
+        }
+        .sort-buttons button {
+            font-size: 0.78rem;
+            padding: 5px 12px;
+            border-radius: 20px;
+            background: var(--white);
+            border: 1px solid #d5c8b0;
+            cursor: pointer;
+            font-weight: 600;
+            color: #5c4a2e;
+            transition: var(--transition);
+            white-space: nowrap;
+        }
+        .sort-buttons button.active {
+            background: var(--accent);
+            color: var(--text-dark);
+            border-color: var(--accent);
+        }
+        .sort-buttons button:hover {
+            background: #faf5ea;
+            border-color: #b8a080;
+        }
+        .badge {
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 20px;
+            letter-spacing: 0.2px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: var(--transition);
+        }
+        .badge.ok {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+        }
+        .badge.warn {
+            background: var(--warning-bg);
+            color: #b45309;
+            border: 1px solid var(--warning-border);
+        }
+        .badge.info {
+            background: #f5f0e8;
+            color: #5c4a2e;
+            border: 1px solid #d5c8b0;
+        }
+        .table-wrapper {
+            flex: 1;
+            overflow: auto;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            background: var(--white);
+            border: 1px solid var(--border);
+            min-height: 200px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.92rem;
+            table-layout: auto;
+            min-width: 620px;
+        }
+        thead {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+        thead th {
+            background: var(--accent);
+            color: var(--text-dark);
+            font-weight: 700;
+            padding: 13px 16px;
+            text-align: left;
+            white-space: nowrap;
+            letter-spacing: 0.3px;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            border-bottom: 2px solid #d98700;
+        }
+        thead th:first-child {
+            border-radius: var(--radius-sm) 0 0 0;
+        }
+        thead th:last-child {
+            border-radius: 0 var(--radius-sm) 0 0;
+        }
+        tbody td {
+            padding: 11px 16px;
+            border-bottom: 1px solid #f0e8d8;
+            vertical-align: top;
+            cursor: default;
+            position: relative;
+            transition: background var(--transition), box-shadow var(--transition);
+            word-break: break-word;
+        }
+        tbody tr:nth-child(even) td {
+            background: #FFFDF7;
+        }
+        tbody tr:nth-child(odd) td {
+            background: var(--white);
+        }
+        tbody tr:hover td {
+            background: #FFF9EB;
+        }
+        tbody td[contenteditable="true"] {
+            cursor: text;
+            outline: none;
+            border-radius: 3px;
+        }
+        tbody td[contenteditable="true"]:focus {
+            background: #FFFAF0 !important;
+            box-shadow: inset 0 0 0 2px var(--accent);
+            z-index: 1;
+        }
+        /* Warnings originais (laranja) */
+        td.cell-warning {
+            background: var(--warning-bg) !important;
+            border-left: 3px solid var(--warning-border);
+            position: relative;
+        }
+        td.cell-warning::after {
+            content: '⚠';
+            position: absolute;
+            top: 4px;
+            right: 7px;
+            font-size: 0.7rem;
+            opacity: 0.75;
+            pointer-events: none;
+            z-index: 1;
+            color: #b45309;
+        }
+        /* Auto-correção (amarelo suave) */
+        td.cell-autocorrect {
+            background: var(--auto-correct-bg) !important;
+            border-left: 3px solid var(--auto-correct-border);
+        }
+        td.cell-autocorrect::after {
+            content: '✨';
+            position: absolute;
+            top: 4px;
+            right: 7px;
+            font-size: 0.7rem;
+            opacity: 0.8;
+            pointer-events: none;
+            z-index: 1;
+        }
+        /* Variação detectada (amarelo um pouco mais escuro) */
+        td.cell-variation {
+            background: var(--variation-bg) !important;
+            border-left: 3px solid var(--variation-border);
+        }
+        td.cell-variation::after {
+            content: '🔍';
+            position: absolute;
+            top: 4px;
+            right: 7px;
+            font-size: 0.7rem;
+            opacity: 0.8;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #b0a590;
+            text-align: center;
+            padding: 40px;
+            gap: 8px;
+        }
+        .empty-state .icon {
+            font-size: 3rem;
+            opacity: 0.5;
+        }
+        .empty-state p {
+            font-size: 0.95rem;
+            max-width: 320px;
+        }
+
+        .input-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 22px;
+            background: #FFFDF5;
+            border-left: 1px solid var(--border);
+            min-width: 300px;
+            max-width: 420px;
+            gap: 12px;
+            box-shadow: -2px 0 8px rgba(0, 0, 0, 0.03);
+        }
+        .input-panel label {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--text-dark);
+            letter-spacing: 0.2px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .input-panel textarea {
+            flex: 1;
+            min-height: 200px;
+            border: 2px solid #e0d5c0;
+            border-radius: var(--radius-sm);
+            padding: 14px 16px;
+            font-family: 'SF Mono', 'Cascadia Code', 'Consolas', 'Monaco', monospace;
+            font-size: 0.82rem;
+            line-height: 1.6;
+            resize: vertical;
+            background: var(--white);
+            color: var(--text-dark);
+            transition: border-color var(--transition), box-shadow var(--transition);
+            tab-size: 2;
+        }
+        .input-panel textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(255, 165, 0, 0.1);
+        }
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        button {
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 0.85rem;
+            padding: 10px 16px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            border: none;
+            letter-spacing: 0.2px;
+            transition: all var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+        .btn-primary {
+            background: var(--accent);
+            color: var(--text-dark);
+            box-shadow: 0 2px 6px rgba(255, 165, 0, 0.3);
+        }
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            box-shadow: 0 3px 10px rgba(255, 165, 0, 0.4);
+            transform: translateY(-1px);
+        }
+        .btn-excel {
+            background: var(--excel-green);
+            color: #1d3b1d;
+            box-shadow: 0 2px 6px rgba(50, 205, 50, 0.3);
+        }
+        .btn-excel:hover {
+            background: var(--excel-green-hover);
+            box-shadow: 0 3px 10px rgba(50, 205, 50, 0.4);
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            background: var(--white);
+            color: var(--text-dark);
+            border: 1.5px solid #d5c8b0;
+        }
+        .btn-secondary:hover {
+            background: #faf5ea;
+            border-color: #b8a080;
+        }
+        .btn-ghost {
+            background: transparent;
+            color: #6b5d4a;
+            border: 1px solid transparent;
+            font-weight: 500;
+            font-size: 0.82rem;
+        }
+        .btn-ghost:hover {
+            background: #f5efe0;
+            border-color: #d5c8b0;
+        }
+        .help-text {
+            font-size: 0.75rem;
+            color: #8c7b60;
+            line-height: 1.4;
+            background: #FFFDF7;
+            padding: 10px 12px;
+            border-radius: var(--radius-sm);
+            border: 1px dashed #e0d5c0;
+        }
+        .help-text strong {
+            color: var(--text-dark);
+        }
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1d150b;
+            color: #FFF8DC;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            z-index: 999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease, bottom 0.3s ease;
+        }
+        .toast.show {
+            opacity: 1;
+            bottom: 32px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 10px;
+            font-size: 0.72rem;
+            color: #a09078;
+            flex-shrink: 0;
+            letter-spacing: 0.2px;
+        }
+
+        @media (max-width: 900px) {
+            main {
+                flex-direction: column;
+            }
+            .input-panel {
+                max-width: 100%;
+                border-left: none;
+                border-top: 1px solid var(--border);
+                flex: none;
+                min-width: auto;
+            }
+            .input-panel textarea {
+                min-height: 160px;
+            }
+            .table-panel {
+                flex: none;
+                min-height: 50vh;
+            }
+            table {
+                min-width: 500px;
+                font-size: 0.8rem;
+            }
+            thead th,
+            tbody td {
+                padding: 8px 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <span class="logo">
+            <span class="icon">🍽️</span> Felds
+        </span>
+        <span class="subtitle">Processador de Pedidos de Almoço</span>
+    </header>
+
+    <main>
+        <section class="table-panel" id="tablePanel">
+            <div class="top-bar">
+                <div class="status-bar" id="statusBar">
+                    <span class="badge info" id="badgeCount">📋 Aguardando dados...</span>
+                    <span class="badge warn" id="badgeWarn" style="display:none;">⚠ Revisões</span>
+                    <span class="badge ok" id="badgeOk" style="display:none;">✅ OK</span>
+                </div>
+                <div class="sort-buttons" id="sortButtons" style="display:none;">
+                    <button id="sortByName" class="active" title="Ordenar por nome (A-Z)">👤 Nome</button>
+                    <button id="sortByOrder" title="Ordenar por pedido (A-Z)">🍛 Pedido</button>
+                </div>
+            </div>
+            <div class="table-wrapper" id="tableWrapper">
+                <div class="empty-state" id="emptyState">
+                    <span class="icon">📝</span>
+                    <p>Cole sua lista de pedidos no painel à direita e clique em <strong>Processar</strong></p>
+                </div>
+                <table id="ordersTable" style="display:none;">
+                    <thead>
+                        <tr>
+                            <th>👤 Nome</th>
+                            <th>🍛 Pedido</th>
+                            <th>📏 Tamanho</th>
+                            <th>📝 Observação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <aside class="input-panel">
+            <label for="rawInput"><span class="icon">📋</span> Cole sua lista aqui:</label>
+            <textarea id="rawInput" placeholder="Cole aqui a lista de pedidos..."></textarea>
+            <div class="btn-group">
+                <button class="btn-primary" id="btnProcess">🔄 Processar</button>
+                <button class="btn-excel" id="btnExportExcel">📊 Exportar Excel</button>
+                <button class="btn-secondary" id="btnCopySummary">📋 Copiar Resumo</button>
+            </div>
+            <div class="btn-group" style="margin-top:4px;">
+                <button class="btn-secondary" id="btnLoadExample">📥 Exemplo</button>
+                <button class="btn-ghost" id="btnClear">🧹 Limpar</button>
+            </div>
+            <div class="help-text">
+                <strong>Novo:</strong> Pedidos são padronizados (maiúsculas/minúsculas) e variações como "Panqueca de carne"/"panqueca de carne" são unificadas. Abreviações (ex.: "frango" → "Frango frito") são destacadas em amarelo.<br>
+                <strong>Ordenação:</strong> Use os botões acima da tabela para ordenar por nome ou pedido.
+            </div>
+        </aside>
+    </main>
+
+    <footer>Felds &copy; 2026 · Protótipo funcional · Edite as células para corrigir ou ajustar padronizações</footer>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        (function() {
+            // ─── DOM ELEMENTS ──────────────────────
+            const rawInput = document.getElementById('rawInput');
+            const btnProcess = document.getElementById('btnProcess');
+            const btnExportExcel = document.getElementById('btnExportExcel');
+            const btnCopySummary = document.getElementById('btnCopySummary');
+            const btnLoadExample = document.getElementById('btnLoadExample');
+            const btnClear = document.getElementById('btnClear');
+            const tableBody = document.getElementById('tableBody');
+            const ordersTable = document.getElementById('ordersTable');
+            const emptyState = document.getElementById('emptyState');
+            const tableWrapper = document.getElementById('tableWrapper');
+            const badgeCount = document.getElementById('badgeCount');
+            const badgeWarn = document.getElementById('badgeWarn');
+            const badgeOk = document.getElementById('badgeOk');
+            const sortButtons = document.getElementById('sortButtons');
+            const sortByNameBtn = document.getElementById('sortByName');
+            const sortByOrderBtn = document.getElementById('sortByOrder');
+            const toast = document.getElementById('toast');
+
+            // ─── EXAMPLE TEXT ──────────────────────
+            const EXAMPLE_TEXT = `[01/01, 11:00] +55 11 0000-0000: Lucas Santos
+Bife acebolado
+Tamanho M
+[01/01, 12:00] +55 11 00000-0000: Sofia Barros
+panqueca de carne
+M
+[01/01, 12:00] +55 11 00000-0000: Bianca Fernandes
+Frango frito
+M
+[01/01, 12:00] +55 11 00000-0000: Patrícia Mendes
+Panqueca de frango
+M
+Sem arroz
+[01/01, 12:00] +55 11 00000-0000: Leonardo Moreira
+panqueca de frango
+P
+[01/01, 12:00] +55 11 00000-0000: Rafael Costa
+frango
+M`;
+
+            // ─── STATE ────────────────────────────
+            let orders = [];
+            let currentSort = 'name'; // 'name' ou 'order'
+
+            // ─── TOAST ────────────────────────────
+            function showToast(msg, dur = 2000) {
+                toast.textContent = msg;
+                toast.classList.add('show');
+                clearTimeout(toast._timeout);
+                toast._timeout = setTimeout(() => toast.classList.remove('show'), dur);
+            }
+
+            // ─── UTILITÁRIOS DE TEXTO ──────────────
+            function removeAccents(str) {
+                return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            }
+
+            function slugify(str) {
+                return removeAccents(str).toLowerCase().replace(/[^a-z0-9]/g, '');
+            }
+
+            function toTitleCase(str) {
+                return str.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase());
+            }
+
+            function normalizeOrderText(str) {
+                return toTitleCase(str.trim().replace(/\s+/g, ' '));
+            }
+
+            // ─── PARSING ──────────────────────────
+            function isHeaderLine(line) {
+                const t = line.trim();
+                return t.startsWith('[') && t.includes(']') && t.includes(':');
+            }
+
+            function extractName(headerLine) {
+                const t = headerLine.trim();
+                const idx = t.lastIndexOf(':');
+                return idx >= 0 ? t.substring(idx + 1).trim() : '';
+            }
+
+            function normalizeSize(text) {
+                if (!text || !text.trim()) return null;
+                let s = text.replace(/^(Tamanho|Tam):?\s*/i, '').trim();
+                if (!s) return null;
+                const VALID = ['P', 'M', 'G', 'GG', 'XG', 'PP', 'EG', 'XGG', 'G1', 'G2'];
+                const MAP = { 'pequeno': 'P', 'p': 'P', 'médio': 'M', 'medio': 'M', 'm': 'M', 'grande': 'G', 'g': 'G',
+                    'gg': 'GG', 'xg': 'XG', 'pp': 'PP', 'eg': 'EG', 'xgg': 'XGG', 'g1': 'G1', 'g2': 'G2' };
+                const upper = s.toUpperCase();
+                if (VALID.includes(upper)) return upper;
+                const lower = s.toLowerCase();
+                if (MAP[lower]) return MAP[lower];
+                return null;
+            }
+
+            function parseOrders(text) {
+                const lines = text.split('\n').filter(l => l.trim() !== '');
+                const result = [];
+                let current = null;
+                for (const line of lines) {
+                    const trimmed = line.trim();
+                    if (isHeaderLine(trimmed)) {
+                        if (current) {
+                            finalizeOrder(current);
+                            result.push(current);
+                        }
+                        current = {
+                            name: extractName(trimmed) || '',
+                            order: '',
+                            size: '',
+                            observation: '',
+                            warnings: []
+                        };
+                    } else if (current) {
+                        if (!current.order) current.order = trimmed;
+                        else if (!current.size) current.size = trimmed;
+                        else current.observation += (current.observation ? '; ' : '') + trimmed;
+                    }
+                }
+                if (current) {
+                    finalizeOrder(current);
+                    result.push(current);
+                }
+                return result;
+            }
+
+            function finalizeOrder(order) {
+                if (!order.name) order.warnings.push({ field: 'name', message: 'Nome não identificado',
+                type: 'warning' });
+                if (!order.order) order.warnings.push({ field: 'order', message: 'Pedido não identificado',
+                type: 'warning' });
+                if (!order.size) {
+                    order.warnings.push({ field: 'size', message: 'Tamanho não informado', type: 'warning' });
+                } else {
+                    const norm = normalizeSize(order.size);
+                    if (norm) order.size = norm;
+                    else order.warnings.push({ field: 'size', message: 'Tamanho não reconhecido: "' + order.size + '"',
+                        type: 'warning' });
+                }
+            }
+
+            // ─── PADRONIZAÇÃO DE PEDIDOS ──────────
+            function applyStandardization(ordersArray) {
+                // Normaliza o texto do pedido (title case)
+                ordersArray.forEach(o => {
+                    if (o.order) o.order = normalizeOrderText(o.order);
+                });
+
+                // Mapa de slug -> nome canônico (primeiro encontrado)
+                const slugMap = new Map();
+                ordersArray.forEach(o => {
+                    if (!o.order) return;
+                    const slug = slugify(o.order);
+                    if (!slugMap.has(slug)) slugMap.set(slug, o.order);
+                });
+
+                // Unifica pedidos com mesmo slug
+                ordersArray.forEach(o => {
+                    if (!o.order) return;
+                    const slug = slugify(o.order);
+                    const canon = slugMap.get(slug);
+                    if (canon && canon !== o.order) {
+                        o.order = canon;
+                        o.warnings.push({
+                            field: 'order',
+                            message: 'Padronizado para "' + canon + '"',
+                            type: 'autocorrect'
+                        });
+                    }
+                });
+
+                // Detecta substrings (possíveis abreviações)
+                const slugs = ordersArray.map(o => o.order ? slugify(o.order) : '').filter(Boolean);
+                const uniqueSlugs = [...new Set(slugs)];
+                for (let i = 0; i < uniqueSlugs.length; i++) {
+                    for (let j = 0; j < uniqueSlugs.length; j++) {
+                        if (i === j) continue;
+                        const a = uniqueSlugs[i];
+                        const b = uniqueSlugs[j];
+                        if (a.includes(b) && a !== b && b.length >= 3 && (b.length / a.length) >= 0.5) {
+                            // b é substring de a e tem pelo menos metade do tamanho
+                            const fullName = slugMap.get(a) || a;
+                            ordersArray.forEach(o => {
+                                if (o.order && slugify(o.order) === b) {
+                                    // Evita duplicar warning se já foi autocorrigido
+                                    if (!o.warnings.some(w => w.field === 'order' && w.type ===
+                                            'autocorrect')) {
+                                        o.warnings.push({
+                                            field: 'order',
+                                            message: 'Possível abreviação de "' + fullName +
+                                                '" – verifique',
+                                            type: 'variation'
+                                        });
+                                    }
+                                }
+                            });
+                        }
+                    }
+                }
+            }
+
+            // ─── ORDENAÇÃO ─────────────────────────
+            function sortOrders(criteria) {
+                if (criteria === 'name') {
+                    orders.sort((a, b) => {
+                        const nameA = (a.name || '').toLowerCase();
+                        const nameB = (b.name || '').toLowerCase();
+                        if (nameA < nameB) return -1;
+                        if (nameA > nameB) return 1;
+                        const orderA = (a.order || '').toLowerCase();
+                        const orderB = (b.order || '').toLowerCase();
+                        return orderA.localeCompare(orderB);
+                    });
+                } else if (criteria === 'order') {
+                    orders.sort((a, b) => {
+                        const orderA = (a.order || '').toLowerCase();
+                        const orderB = (b.order || '').toLowerCase();
+                        if (orderA < orderB) return -1;
+                        if (orderA > orderB) return 1;
+                        const nameA = (a.name || '').toLowerCase();
+                        const nameB = (b.name || '').toLowerCase();
+                        return nameA.localeCompare(nameB);
+                    });
+                }
+                currentSort = criteria;
+                updateSortButtons();
+                renderTable();
+            }
+
+            function updateSortButtons() {
+                sortByNameBtn.classList.toggle('active', currentSort === 'name');
+                sortByOrderBtn.classList.toggle('active', currentSort === 'order');
+            }
+
+            // ─── RENDER ───────────────────────────
+            function renderTable() {
+                tableBody.innerHTML = '';
+                if (orders.length === 0) {
+                    ordersTable.style.display = 'none';
+                    emptyState.style.display = 'flex';
+                    sortButtons.style.display = 'none';
+                    return;
+                }
+                ordersTable.style.display = 'table';
+                emptyState.style.display = 'none';
+                sortButtons.style.display = 'flex';
+
+                orders.forEach((order, index) => {
+                    const tr = document.createElement('tr');
+                    tr.setAttribute('data-index', index);
+                    ['name', 'order', 'size', 'observation'].forEach(field => {
+                        const td = document.createElement('td');
+                        td.setAttribute('contenteditable', 'true');
+                        td.setAttribute('data-index', index);
+                        td.setAttribute('data-field', field);
+                        td.textContent = order[field] || '';
+                        applyCellWarnings(td, order, field);
+                        tr.appendChild(td);
+                    });
+                    tableBody.appendChild(tr);
+                });
+                updateStatusBar();
+            }
+
+            function applyCellWarnings(td, order, field) {
+                const warnings = order.warnings.filter(w => w.field === field);
+                td.classList.remove('cell-warning', 'cell-autocorrect', 'cell-variation');
+                td.removeAttribute('title');
+                if (warnings.length > 0) {
+                    const last = warnings[warnings.length - 1]; // prioridade ao último
+                    if (last.type === 'autocorrect') {
+                        td.classList.add('cell-autocorrect');
+                        td.title = last.message;
+                    } else if (last.type === 'variation') {
+                        td.classList.add('cell-variation');
+                        td.title = last.message;
+                    } else {
+                        td.classList.add('cell-warning');
+                        td.title = last.message;
+                    }
+                }
+            }
+
+            function updateStatusBar() {
+                const total = orders.length;
+                const totalWarnings = orders.reduce((sum, o) => sum + o.warnings.filter(w => w.type === 'warning')
+                    .length, 0);
+                const totalAuto = orders.reduce((sum, o) => sum + o.warnings.filter(w => w.type === 'autocorrect' || w
+                    .type === 'variation').length, 0);
+                badgeCount.textContent = '📋 ' + total + ' pedido' + (total !== 1 ? 's' : '');
+                if (total === 0) {
+                    badgeWarn.style.display = 'none';
+                    badgeOk.style.display = 'none';
+                    badgeCount.textContent = '📋 Nenhum pedido';
+                } else if (totalWarnings > 0 || totalAuto > 0) {
+                    badgeWarn.style.display = 'inline-flex';
+                    badgeOk.style.display = 'none';
+                    let msg = '⚠ ';
+                    if (totalWarnings > 0) msg += totalWarnings + ' revisão(ões)';
+                    if (totalAuto > 0) msg += (totalWarnings > 0 ? ', ' : '') + totalAuto +
+                        ' ajuste(s) automático(s)';
+                    badgeWarn.textContent = msg;
+                } else {
+                    badgeWarn.style.display = 'none';
+                    badgeOk.style.display = 'inline-flex';
+                    badgeOk.textContent = '✅ ' + total + ' pedidos verificados';
+                }
+            }
+
+            // ─── EDIÇÃO DE CÉLULAS ────────────────
+            function revalidateAndStandardize(order, field) {
+                order.warnings = order.warnings.filter(w => w.field !== field);
+                if (field === 'name') {
+                    if (!order.name.trim()) order.warnings.push({ field: 'name', message: 'Nome vazio',
+                    type: 'warning' });
+                } else if (field === 'order') {
+                    if (!order.order.trim()) {
+                        order.warnings.push({ field: 'order', message: 'Pedido vazio', type: 'warning' });
+                    } else {
+                        order.order = normalizeOrderText(order.order);
+                        // Reaplica padronização simples (slug) – apenas localmente
+                        const slug = slugify(order.order);
+                        const canon = orders.find(o => o !== order && o.order && slugify(o.order) === slug);
+                        if (canon && canon.order !== order.order) {
+                            order.order = canon.order;
+                            order.warnings.push({ field: 'order', message: 'Padronizado para "' + canon.order +
+                                    '"', type: 'autocorrect' });
+                        }
+                        // Reavalia substring (apenas contra outros já existentes)
+                        orders.forEach(other => {
+                            if (other === order || !other.order) return;
+                            const slugA = slugify(order.order);
+                            const slugB = slugify(other.order);
+                            if (slugA !== slugB && slugA.includes(slugB) && slugB.length >= 3 && (slugB
+                                    .length / slugA.length) >= 0.5) {
+                                if (!order.warnings.some(w => w.field === 'order' && w.type ===
+                                        'variation')) {
+                                    order.warnings.push({ field: 'order',
+                                        message: 'Possível abreviação de "' + other.order + '"',
+                                        type: 'variation' });
+                                }
+                            }
+                        });
+                    }
+                } else if (field === 'size') {
+                    if (!order.size.trim()) {
+                        order.warnings.push({ field: 'size', message: 'Tamanho vazio', type: 'warning' });
+                    } else {
+                        const norm = normalizeSize(order.size);
+                        if (norm) order.size = norm;
+                        else order.warnings.push({ field: 'size', message: 'Tamanho não reconhecido',
+                        type: 'warning' });
+                    }
+                }
+            }
+
+            function handleCellEdit(td) {
+                const index = parseInt(td.getAttribute('data-index'), 10);
+                const field = td.getAttribute('data-field');
+                if (isNaN(index) || !field || index >= orders.length) return;
+                orders[index][field] = td.textContent.trim();
+                revalidateAndStandardize(orders[index], field);
+                applyCellWarnings(td, orders[index], field);
+                if (field === 'size' && orders[index].size !== td.textContent) td.textContent = orders[index].size;
+                if (field === 'order' && orders[index].order !== td.textContent) td.textContent = orders[index].order;
+                updateStatusBar();
+            }
+
+            tableBody.addEventListener('input', function(e) {
+                const td = e.target.closest('td[contenteditable="true"]');
+                if (!td) return;
+                clearTimeout(td._editTimeout);
+                td._editTimeout = setTimeout(() => handleCellEdit(td), 400);
+            });
+            tableBody.addEventListener('blur', function(e) {
+                const td = e.target.closest('td[contenteditable="true"]');
+                if (!td) return;
+                clearTimeout(td._editTimeout);
+                handleCellEdit(td);
+            }, true);
+            tableBody.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    const td = e.target.closest('td[contenteditable="true"]');
+                    if (!td) return;
+                    e.preventDefault();
+                    handleCellEdit(td);
+                    td.blur();
+                }
+            });
+
+            // ─── PROCESSAMENTO PRINCIPAL ──────────
+            function processText() {
+                orders = parseOrders(rawInput.value);
+                applyStandardization(orders);
+                sortOrders(currentSort); // já renderiza
+                if (orders.length > 0) tableWrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+
+            // ─── EXPORT EXCEL ─────────────────────
+            btnExportExcel.addEventListener('click', () => {
+                if (orders.length === 0) return showToast('⚠ Nenhum pedido para exportar.');
+                const data = orders.map(o => ({
+                    'Nome': o.name,
+                    'Pedido': o.order,
+                    'Tamanho': o.size,
+                    'Observação': o.observation
+                }));
+                const ws = XLSX.utils.json_to_sheet(data);
+                ws['!cols'] = [{ wch: 25 }, { wch: 30 }, { wch: 10 }, { wch: 35 }];
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'Pedidos Felds');
+                XLSX.writeFile(wb, 'pedidos_felds.xlsx');
+                showToast('📊 Planilha Excel exportada!');
+            });
+
+            // ─── COPY SUMMARY ─────────────────────
+            btnCopySummary.addEventListener('click', () => {
+                if (orders.length === 0) return showToast('⚠ Nenhum pedido para resumir.');
+                const groups = {};
+                orders.forEach(o => {
+                    const dish = o.order.trim() || '(sem nome)';
+                    const size = o.size.trim() || '?';
+                    if (!groups[dish]) groups[dish] = { counts: {}, items: [] };
+                    groups[dish].counts[size] = (groups[dish].counts[size] || 0) + 1;
+                    if (o.observation.trim()) groups[dish].items.push({ size, obs: o.observation.trim() });
+                });
+                const dishNames = Object.keys(groups).sort((a, b) => a.localeCompare(b));
+                let summary = '#\n';
+                dishNames.forEach((dish, idx) => {
+                    summary += `Opção ${idx+1}: ${dish}\n`;
+                    const cnt = groups[dish].counts;
+                    ['P', 'M', 'G', 'GG', 'XG', 'PP', 'EG', 'XGG'].forEach(s => { if (cnt[s]) summary +=
+                            `${s}:${cnt[s]}\n`; });
+                    Object.keys(cnt).forEach(s => { if (!['P', 'M', 'G', 'GG', 'XG', 'PP', 'EG', 'XGG']
+                            .includes(s) && cnt[s]) summary += `${s}:${cnt[s]}\n`; });
+                    summary += '\n';
+                });
+                summary += 'Observações que apareceram\n\n';
+                let hasObs = false;
+                dishNames.forEach((dish, idx) => {
+                    groups[dish].items.forEach(item => {
+                        summary += `- [Opção ${idx+1}] [${item.size}] [${item.obs}]\n`;
+                        hasObs = true;
+                    });
+                });
+                if (!hasObs) summary += '(nenhuma observação)\n';
+                summary += '#fim';
+                navigator.clipboard.writeText(summary).then(() => showToast('📋 Resumo copiado!')).catch(() => {
+                    const ta = document.createElement('textarea');
+                    ta.value = summary;
+                    document.body.appendChild(ta);
+                    ta.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(ta);
+                    showToast('📋 Resumo copiado (fallback).');
+                });
+            });
+
+            // ─── ORDENAÇÃO MANUAL ─────────────────
+            sortByNameBtn.addEventListener('click', () => sortOrders('name'));
+            sortByOrderBtn.addEventListener('click', () => sortOrders('order'));
+
+            // ─── OUTROS BOTÕES ───────────────────
+            btnProcess.addEventListener('click', processText);
+            btnLoadExample.addEventListener('click', () => {
+                rawInput.value = EXAMPLE_TEXT;
+                processText();
+            });
+            btnClear.addEventListener('click', () => {
+                if (rawInput.value.trim() && orders.length > 0 && !confirm('Limpar tudo?')) return;
+                rawInput.value = '';
+                orders = [];
+                renderTable();
+                ordersTable.style.display = 'none';
+                emptyState.style.display = 'flex';
+                sortButtons.style.display = 'none';
+                badgeCount.textContent = '📋 Aguardando dados...';
+                badgeWarn.style.display = 'none';
+                badgeOk.style.display = 'none';
+            });
+
+            // Debounce no textarea
+            let debounce;
+            rawInput.addEventListener('input', () => {
+                clearTimeout(debounce);
+                debounce = setTimeout(() => { if (rawInput.value.trim()) processText(); }, 900);
+            });
+            rawInput.addEventListener('keydown', e => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    processText();
+                }
+            });
+
+            // Inicialização
+            window.addEventListener('DOMContentLoaded', () => {
+                if (!rawInput.value.trim()) rawInput.value = EXAMPLE_TEXT;
+                processText();
+            });
+        })();
+    </script>
+</body>
+</html>

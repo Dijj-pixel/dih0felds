@@ -1,11 +1,29 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Acesso ao Sistema Felds</title>
-    <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+    <title>Felds — Carregando...</title>
     <style>
+        /* ============================================
+               PALETA DE CORES PRINCIPAL DO SISTEMA FELDS
+               ============================================ */
+        :root {
+            /* Cor principal de fundo (creme suave) */
+            --bg-main: #FFF8DC;
+            /* Cor de destaque (laranja) */
+            --accent: #FFA500;
+            /* Cor para pequenos detalhes (marrom escuro) */
+            --text-dark: #1d150b;
+            /* Cor branca para elementos de destaque */
+            --white: #FFFFFF;
+            /* Transição suave para animações */
+            --transition: 0.3s ease;
+        }
+
+        /* ============================================
+               RESET GLOBAL E CONFIGURAÇÕES BÁSICAS
+               ============================================ */
         * {
             margin: 0;
             padding: 0;
@@ -13,185 +31,244 @@
         }
 
         body {
-            background-color: #FFA500;
-            font-family: 'EB Garamond', serif;
+            font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg-main);
+            color: var(--text-dark);
             min-height: 100vh;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            padding: 20px;
+            justify-content: center;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            /* Mantém o cursor como pointer para indicar interatividade */
+            cursor: default;
+            user-select: none;
+            /* Impede seleção de texto durante a splash */
+            overflow: hidden;
+            /* Remove qualquer barra de rolagem */
         }
 
-        .password-container {
-            background: white;
-            border-radius: 20px;
-            padding: clamp(30px, 5vw, 50px);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        /* ============================================
+               CONTAINER PRINCIPAL DA SPLASH SCREEN
+               ============================================ */
+        .splash-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            /* Espaçamento entre logo e nome */
+            animation: fadeInScale 1.2s ease-out;
+            /* Animação de entrada */
+        }
+
+        /* ============================================
+               LOGOTIPO — ÍCONE PRINCIPAL
+               ============================================ */
+        .logo-icon {
+            font-size: 8rem;
+            /* Tamanho grande para impacto visual */
+            line-height: 1;
+            /* Remove espaçamento extra */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulse 2s ease-in-out infinite;
+            /* Animação sutil de pulsação */
+            filter: drop-shadow(0 4px 12px rgba(255, 165, 0, 0.3));
+            /* Sombra suave laranja */
+        }
+
+        /* ============================================
+               NOME "FELDS" — TEXTO PRINCIPAL
+               ============================================ */
+        .logo-name {
+            font-size: 4.5rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+            color: var(--text-dark);
             text-align: center;
-            max-width: 450px;
-            width: 100%;
-            border: 3px solid black;
-        }
-
-        .password-container h1 {
-            color: black;
-            font-family: 'EB Garamond', serif;
-            font-size: clamp(1.5rem, 3vw, 2rem);
-            margin-bottom: 20px;
-            font-weight: 700;
-            letter-spacing: 1px;
-        }
-
-        .password-container h1 span {
-            font-style: italic;
-            color: black;
-            display: block;
-            font-size: clamp(1rem, 2vw, 1.3rem);
-            margin-top: 5px;
-            font-weight: 400;
-        }
-
-        .input-wrapper {
             position: relative;
-            margin: 25px 0;
+            display: inline-block;
         }
 
-        #password-input {
-            width: 100%;
-            padding: 15px 20px;
-            font-size: 1.1rem;
-            border: 2px solid black;
-            border-radius: 10px;
-            background: white;
-            color: black;
-            font-family: 'Courier Prime', monospace;
-            letter-spacing: 2px;
-            outline: none;
-            transition: all 0.3s ease;
+        /* Linha decorativa laranja abaixo do nome */
+        .logo-name::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 4px;
+            background: var(--accent);
+            border-radius: 2px;
+            animation: expandLine 2.5s ease-out forwards;
+            /* Anima a linha se expandindo */
         }
 
-        #password-input::placeholder {
-            font-family: 'Courier Prime', monospace;
-            color: #666;
-            letter-spacing: 1px;
+        /* ============================================
+               INDICADOR DE CARREGAMENTO (OPCIONAL)
+               ============================================ */
+        .loading-dots {
+            display: flex;
+            gap: 8px;
+            margin-top: 30px;
+            animation: fadeIn 2s ease-out;
         }
 
-        #password-input:focus {
-            border-color: #FFA500;
-            box-shadow: 0 0 0 3px rgba(255, 165, 0, 0.3);
+        .loading-dots span {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--accent);
+            animation: bounce 1.4s ease-in-out infinite;
         }
 
-        .submit-btn {
-            width: 100%;
-            padding: 15px;
-            background: black;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 1.1rem;
-            font-family: 'EB Garamond', serif;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            letter-spacing: 1px;
-            text-transform: uppercase;
+        /* Delay escalonado para cada bolinha */
+        .loading-dots span:nth-child(2) {
+            animation-delay: 0.2s;
         }
 
-        .submit-btn:hover {
-            background: #333;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        .loading-dots span:nth-child(3) {
+            animation-delay: 0.4s;
         }
 
-        .error-message {
-            color: #FF0000;
-            margin-top: 15px;
-            font-size: 0.9rem;
-            min-height: 20px;
-            font-family: 'EB Garamond', serif;
-            font-weight: 500;
+        /* ============================================
+               ANIMAÇÕES KEYFRAMES
+               ============================================ */
+
+        /* Animação de entrada — aparece suavemente com leve zoom */
+        @keyframes fadeInScale {
+            0% {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
         }
 
-        /* Responsividade adicional */
-        @media (max-width: 480px) {
-            .password-container {
-                padding: 25px;
-                border-radius: 15px;
+        /* Animação sutil de pulsação no ícone */
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        /* Animação das bolinhas de carregamento */
+        @keyframes bounce {
+            0%, 80%, 100% {
+                transform: translateY(0);
+                opacity: 0.6;
+            }
+            40% {
+                transform: translateY(-15px);
+                opacity: 1;
+            }
+        }
+
+        /* Animação da linha decorativa */
+        @keyframes expandLine {
+            0% {
+                width: 0%;
+                opacity: 0;
+            }
+            100% {
+                width: 60%;
+                opacity: 1;
+            }
+        }
+
+        /* Fade in simples */
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+
+        /* ============================================
+               RESPONSIVIDADE PARA TELAS MENORES
+               ============================================ */
+        @media (max-width: 600px) {
+            .logo-icon {
+                font-size: 5rem;
+                /* Reduz o ícone em telas pequenas */
             }
 
-            #password-input,
-            .submit-btn {
-                font-size: 1rem;
-                padding: 12px;
+            .logo-name {
+                font-size: 3rem;
+                /* Reduz o nome em telas pequenas */
+            }
+
+            .loading-dots span {
+                width: 10px;
+                height: 10px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .logo-icon {
+                font-size: 4rem;
+            }
+
+            .logo-name {
+                font-size: 2.2rem;
             }
         }
     </style>
 </head>
 <body>
-    <div class="password-container">
-        <h1>
-            Acesso ao sistema felds
-            <span>por: Diego</span>
-        </h1>
 
-        <div class="input-wrapper">
-            <input 
-                type="password" 
-                id="password-input" 
-                placeholder="Digite a senha de acesso"
-                onkeypress="if(event.key === 'Enter') verificarSenha()"
-            >
+    <!-- ============================================
+    CONTEÚDO PRINCIPAL DA SPLASH SCREEN
+    ============================================ -->
+    <div class="splash-container">
+        <!-- Ícone do logotipo (garfo e faca) -->
+        <div class="logo-icon">🍽️</div>
+
+        <!-- Nome da marca "Felds" -->
+        <h1 class="logo-name">Felds</h1>
+
+        <!-- Indicador de carregamento com três bolinhas animadas -->
+        <div class="loading-dots">
+            <span></span>
+            <span></span>
+            <span></span>
         </div>
-
-        <button class="submit-btn" onclick="verificarSenha()">
-            Acessar Sistema
-        </button>
-
-        <div id="error-message" class="error-message"></div>
     </div>
 
+    <!-- ============================================
+    SCRIPT DE REDIRECIONAMENTO AUTOMÁTICO
+    ============================================ -->
     <script>
-        // ========================================
-        // CONFIGURAÇÃO DA SENHA
-        // Altere o valor abaixo para mudar a senha
-        // ========================================
-        const SENHA_CORRETA = "diegodomine";
-        
-        // ========================================
-        // PÁGINA DE DESTINO
-        // Altere o valor abaixo para mudar a página de destino
-        // ========================================
-        const PAGINA_DESTINO = "dashboard.html"; // ou "https://seusite.com/pagina-secreta"
+        // Aguarda o carregamento completo da página
+        window.addEventListener('DOMContentLoaded', function() {
+            // Define o tempo de espera de 3 segundos (3000 milissegundos)
+            const REDIRECT_DELAY = 3000; // 3 segundos
 
-        function verificarSenha() {
-            const senhaDigitada = document.getElementById('password-input').value;
-            const errorDiv = document.getElementById('error-message');
-            
-            if (senhaDigitada === SENHA_CORRETA) {
-                errorDiv.textContent = "Acesso autorizado! Redirecionando...";
-                errorDiv.style.color = "#00AA00";
-                
-                // Redireciona após 1 segundo
-                setTimeout(() => {
-                    window.location.href = PAGINA_DESTINO;
-                }, 1000);
-                
-            } else {
-                errorDiv.textContent = "Senha incorreta. Tente novamente.";
-                errorDiv.style.color = "#FF0000";
-                
-                // Limpa o campo de senha
-                document.getElementById('password-input').value = '';
-                
-                // Foca novamente no input
-                document.getElementById('password-input').focus();
-            }
-        }
+            // Define o destino do redirecionamento
+            const REDIRECT_URL = './pass.html'; // Página de login/senha
 
-        // Limpa a mensagem de erro quando o usuário começa a digitar
-        document.getElementById('password-input').addEventListener('input', function() {
-            document.getElementById('error-message').textContent = '';
+            // Exibe uma mensagem no console para facilitar o debug
+            console.log('🍽️ Felds — Splash Screen carregada');
+            console.log(`⏱️ Redirecionando para "${REDIRECT_URL}" em ${REDIRECT_DELAY / 1000} segundos...`);
+
+            // Executa o redirecionamento após o tempo definido
+            setTimeout(function() {
+                // Redireciona o navegador para a página de senha
+                window.location.href = REDIRECT_URL;
+            }, REDIRECT_DELAY);
         });
     </script>
+
 </body>
 </html>
